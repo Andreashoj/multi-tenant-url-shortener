@@ -20,6 +20,8 @@ services:
     environment:
       DATABASE_URL: postgres://user:postgres@postgres:5432/url-shortener?sslmode=disable
       PORT: 8080
+    volumes:
+      - ./api:/app
     depends_on:
       - postgres
 
@@ -31,6 +33,9 @@ services:
       - "5173:5173"
     environment:
       API_URL: http://localhost:8080
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     depends_on:
       - api
 
