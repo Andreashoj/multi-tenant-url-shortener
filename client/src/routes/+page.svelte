@@ -1,6 +1,29 @@
 <script lang="ts">
     let email = $state('')
     let password = $state('')
+
+    async function submit() {
+        const response = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email,
+                password
+            }),
+            credentials: 'include' // Important for cookies!
+        })
+
+        if (response.ok) {
+            const data = await response.json()
+            // Handle success (redirect, etc.)
+            console.log(data)
+        } else {
+            // Handle error
+            console.error('Login failed')
+        }
+    }
 </script>
 
 
@@ -15,7 +38,7 @@
             <input name="password" bind:value={password} type="password">
         </div>
 
-        <button class="px-4 py-2.5 border border-black mt-4">
+        <button class="px-4 py-2.5 border border-black mt-4" onclick={submit}>
             Login
         </button>
     </section>
