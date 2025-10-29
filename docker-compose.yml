@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: url-shortener-db
+    environment:
+      POSTGRES_DB: url-shortener
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+    container_name: api
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://user:postgres@postgres:5432/url-shortener?sslmode=disable
+      PORT: 8080
+    depends_on:
+      - postgres
+
+  client:
+    build:
+      context: ./client
+    container_name: client
+    ports:
+      - "5173:5173"
+    environment:
+      API_URL: http://localhost:8080
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
