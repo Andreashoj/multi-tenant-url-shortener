@@ -24,6 +24,24 @@
             console.error('Login failed')
         }
     }
+
+    async function logout() {
+        const response = await fetch('http://localhost:8080/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include' // Important for cookies!
+        })
+
+        console.log(response)
+    }
+
+    async function authorizedRequest() {
+        const response = await fetch('http://localhost:8080/', {
+            method: 'GET',
+            credentials: 'include' // Important for cookies!
+        })
+
+        console.log(response)
+    }
 </script>
 
 
@@ -41,5 +59,10 @@
         <button class="px-4 py-2.5 border border-black mt-4" onclick={submit}>
             Login
         </button>
+        <button class="px-4 py-2.5 border border-black mt-4" onclick={logout}>
+            Logout
+        </button>
+
+        <button onclick={authorizedRequest}>Make request!</button>
     </section>
 </main>

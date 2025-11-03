@@ -17,6 +17,7 @@ services:
     container_name: api
     ports:
       - "8080:8080"
+      - "2345:2345"
     environment:
       DATABASE_URL: postgres://user:postgres@postgres:5432/url-shortener?sslmode=disable
       PORT: 8080

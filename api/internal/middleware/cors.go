@@ -5,7 +5,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func DefineMiddleware(r *chi.Mux) {
+func DefineMiddleware(r *chi.Mux, jwt string) {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
