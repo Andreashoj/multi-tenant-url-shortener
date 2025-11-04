@@ -1,48 +1,78 @@
 package middleware
 
 import (
+	"api/internal/services"
 	"context"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
+func AuthMiddleware(jwtSecret string, authService services.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get access token from cookie
 			cookie, err := r.Cookie("access_token")
+
+			var token *jwt.Token
+			var claims jwt.MapClaims
+
+			// If access token is missing or invalid, try refresh
 			if err != nil {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
+				// Access token missing, try refresh token
+				refreshCookie, err := r.Cookie("refresh_token")
+				if err != nil {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				refreshToken, err := jwt.Parse(refreshCookie.Value, func(token *jwt.Token) (interface{}, error) {
+					return []byte(jwtSecret), nil
+				})
+
+				if err != nil || !refreshToken.Valid {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				refreshClaims := refreshToken.Claims.(jwt.MapClaims)
+				userID := uint(refreshClaims["user_id"].(float64))
+				email := refreshClaims["email"].(string)
+
+				newAccessToken, err := authService.GenerateAccessToken(userID, email)
+				if err != nil {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				http.SetCookie(w, &http.Cookie{
+					Name:     "access_token",
+					Value:    newAccessToken,
+					HttpOnly: true,
+					Secure:   true,
+					SameSite: http.SameSiteStrictMode,
+					MaxAge:   900,
+				})
+
+				token, _ = jwt.Parse(newAccessToken, func(token *jwt.Token) (interface{}, error) {
+					return []byte(jwtSecret), nil
+				})
+				claims = token.Claims.(jwt.MapClaims)
+			} else {
+				token, err = jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
+					return []byte(jwtSecret), nil
+				})
+
+				if err != nil || !token.Valid {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				claims = token.Claims.(jwt.MapClaims)
 			}
 
-			// Verify JWT
-			token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
-				return []byte(jwtSecret), nil
-			})
-
-			if err != nil || !token.Valid {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-
-			// Extract claims
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if !ok {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-
-			// Add user info to context
-			userID, ok := claims["user_id"].(float64)
-			if !ok {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			ctx := context.WithValue(r.Context(), "user_id", uint(userID))
+			userID := uint(claims["user_id"].(float64))
+			ctx := context.WithValue(r.Context(), "user_id", userID)
 			ctx = context.WithValue(ctx, "email", claims["email"])
-
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

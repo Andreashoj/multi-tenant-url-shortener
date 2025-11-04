@@ -4,8 +4,8 @@ import (
 	"api/internal/middleware"
 	"api/internal/models"
 	"api/internal/services"
-	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -24,7 +24,7 @@ func NewAuthHandler(authService services.AuthService, jwtSecret string) *AuthHan
 
 func (h AuthHandler) RegisterRoutes(r *chi.Mux) {
 	r.Group(func(auth chi.Router) {
-		auth.Use(middleware.AuthMiddleware(h.jwtSecret))
+		auth.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
 		auth.Post("/api/auth/logout", h.logout)
 	})
 	r.Post("/api/auth/login", h.login)
@@ -39,19 +39,18 @@ func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.authService.Login(data.Email, data.Password)
-	fmt.Println("user", user)
 	if err != nil {
 		respondError(w, "Authentication failed", 401)
 		return
 	}
 
-	refreshToken, err := h.authService.GenerateRefreshToken(user.Id)
+	refreshToken, err := h.authService.GenerateRefreshToken(user.Id, user.Email)
 	if err != nil {
 		respondError(w, "Authentication failed", 500)
 		return
 	}
 
-	accessToken, err := h.authService.GenerateAccessToken(user)
+	accessToken, err := h.authService.GenerateAccessToken(user.Id, user.Email)
 	if err != nil {
 		respondError(w, "Authentication failed", 500)
 		return
@@ -61,9 +60,9 @@ func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/",
-		MaxAge:   900,
+		MaxAge:   10,
 		HttpOnly: true,
-		Secure:   false, // true in production
+		Secure:   os.Getenv("ENV") == "PRODUCTION",
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -73,7 +72,7 @@ func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/api/auth",
 		MaxAge:   604800,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   os.Getenv("ENV") == "PRODUCTION",
 		SameSite: http.SameSiteStrictMode,
 	})
 

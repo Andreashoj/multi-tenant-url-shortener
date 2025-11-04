@@ -35,7 +35,7 @@
     }
 
     async function authorizedRequest() {
-        const response = await fetch('http://localhost:8080/', {
+        const response = await fetch('http://localhost:8080/api/auth', {
             method: 'GET',
             credentials: 'include' // Important for cookies!
         })

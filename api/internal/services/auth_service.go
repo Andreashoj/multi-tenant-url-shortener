@@ -13,8 +13,8 @@ import (
 type AuthService interface {
 	Login(email string, password string) (*models.User, error)
 	Logout(userID uint) error
-	GenerateRefreshToken(userID uint) (*models.RefreshToken, error)
-	GenerateAccessToken(user *models.User) (string, error)
+	GenerateRefreshToken(userID uint, email string) (*models.RefreshToken, error)
+	GenerateAccessToken(userID uint, email string) (string, error)
 }
 
 type authService struct {
@@ -48,14 +48,30 @@ func (s authService) Logout(userID uint) error {
 	return nil
 }
 
-func (s authService) GenerateRefreshToken(userID uint) (*models.RefreshToken, error) {
-	token := uuid.New().String()
+func (s authService) GenerateRefreshToken(userID uint, email string) (*models.RefreshToken, error) {
+	tokenID := uuid.NewString()
+	expiresAt := time.Now().Add(7 * 24 * time.Hour) // 7 days
+
+	// Generate JWT refresh token
+	claims := jwt.MapClaims{
+		"user_id":  userID,
+		"email":    email,
+		"token_id": tokenID,
+		"exp":      expiresAt.Unix(),
+	}
+
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := jwtToken.SignedString([]byte(s.jwtSecret))
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign refresh token: %s", err)
+	}
+
 	refreshToken := &models.RefreshToken{
-		ID:        uuid.NewString(),
+		ID:        tokenID,
 		UserID:    userID,
-		Token:     token,
-		ExpiresAt: time.Time{},
-		CreatedAt: time.Time{},
+		Token:     tokenString,
+		ExpiresAt: expiresAt,
+		CreatedAt: time.Now(),
 	}
 
 	if err := s.refreshTokenRepo.CreateRefreshToken(refreshToken); err != nil {
@@ -65,10 +81,10 @@ func (s authService) GenerateRefreshToken(userID uint) (*models.RefreshToken, er
 	return refreshToken, nil
 }
 
-func (s authService) GenerateAccessToken(user *models.User) (string, error) {
+func (s authService) GenerateAccessToken(userID uint, email string) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": user.Id,
-		"email":   user.Email,
+		"user_id": userID,
+		"email":   email,
 		"exp":     time.Now().Add(15 * time.Minute).Unix(),
 	}
 

@@ -6,14 +6,21 @@ import (
 	"api/internal/middleware"
 	"api/internal/repos"
 	"api/internal/services"
-	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	jwt := "DnaX8ng489FkluiUsHTMmY+YqBUpENEksHCGygRp/l0="
+	jwt := os.Getenv("JWT_TOKEN")
+	if jwt == "" {
+		if os.Getenv("ENV") == "PRODUCTION" {
+			log.Fatal("JWT_TOKEN not set")
+		}
+		jwt = "my_jwt_token_tester" // fallback
+	}
 	r := chi.NewRouter()
 
 	// DB
@@ -39,12 +46,5 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService, jwt)
 	authHandler.RegisterRoutes(r)
 
-	r.Group(func(router chi.Router) {
-		router.Use(middleware.AuthMiddleware(jwt))
-		router.Get("/", func(writer http.ResponseWriter, request *http.Request) {
-			json.NewEncoder(writer).Encode("success!")
-		})
-	})
-
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":"+os.Getenv("PORT"), r)
 }

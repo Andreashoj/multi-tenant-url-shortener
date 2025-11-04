@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
@@ -35,6 +36,10 @@ func InitDB() (*sql.DB, error) {
 		return nil, err
 	}
 
+	DB.SetMaxOpenConns(25)
+	DB.SetMaxIdleConns(5)
+	DB.SetConnMaxLifetime(5 * time.Minute)
+
 	fmt.Println("Connected to db!")
 
 	return DB, nil
@@ -51,7 +56,7 @@ func runMigrations() error {
 		`CREATE TABLE IF NOT EXISTS refresh_tokens (
     		id UUID PRIMARY KEY,
     		user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    		token VARCHAR(255) UNIQUE NOT NULL,
+    		token VARCHAR(512) UNIQUE NOT NULL,
 			expires_at TIMESTAMP NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)`,
