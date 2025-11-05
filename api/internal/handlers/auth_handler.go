@@ -12,25 +12,42 @@ import (
 
 type AuthHandler struct {
 	authService services.AuthService
+	userService services.UserService
 	jwtSecret   string
 }
 
-func NewAuthHandler(authService services.AuthService, jwtSecret string) *AuthHandler {
+func NewAuthHandler(authService services.AuthService, userService services.UserService, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		userService: userService,
 		jwtSecret:   jwtSecret,
 	}
 }
 
-func (h AuthHandler) RegisterRoutes(r *chi.Mux) {
+func (h *AuthHandler) RegisterRoutes(r *chi.Mux) {
 	r.Group(func(auth chi.Router) {
 		auth.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
 		auth.Post("/api/auth/logout", h.logout)
+		auth.Get("/api/auth/me", h.me)
+		auth.Get("/api/auth/test", func(writer http.ResponseWriter, request *http.Request) {
+			respondJSON(writer, "Succes!", 200)
+		})
 	})
+
 	r.Post("/api/auth/login", h.login)
 }
 
-func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) me(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("user_id").(uint)
+	user, err := h.userService.Me(userId)
+	if err != nil {
+		respondError(w, "Something went wrong getting the user", 500)
+		return
+	}
+	respondJSON(w, user, 200)
+}
+
+func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	data, err := tryDecodeJSON[models.User](r.Body) // TODO: make post request into new type
 
 	if err != nil {
@@ -69,7 +86,7 @@ func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken.Token,
-		Path:     "/api/auth",
+		Path:     "/",
 		MaxAge:   604800,
 		HttpOnly: true,
 		Secure:   os.Getenv("ENV") == "PRODUCTION",
@@ -79,7 +96,7 @@ func (h AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, user, 200)
 }
 
-func (h AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(uint)
 	if err := h.authService.Logout(userID); err != nil {
 		respondError(w, "something went wrong trying to log out", 500)
@@ -92,7 +109,7 @@ func (h AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   false, // true in production
+		Secure:   os.Getenv("ENV") == "PRODUCTION",
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -102,7 +119,7 @@ func (h AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1, // or set Expires to past time
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   os.Getenv("ENV") == "PRODUCTION",
 		SameSite: http.SameSiteStrictMode,
 	})
 

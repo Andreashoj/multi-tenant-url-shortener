@@ -41,9 +41,10 @@ func main() {
 
 	// Services
 	authService := services.NewAuthService(userRepo, refreshTokenRepo, jwt)
+	userService := services.NewUserService(userRepo)
 
 	// Handlers
-	authHandler := handlers.NewAuthHandler(authService, jwt)
+	authHandler := handlers.NewAuthHandler(authService, userService, jwt)
 	authHandler.RegisterRoutes(r)
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)

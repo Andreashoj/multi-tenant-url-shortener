@@ -11,6 +11,7 @@ import (
 
 type UserRepo interface {
 	GetUserByEmailAndPassword(email string, password string) (*models.User, error)
+	Get(userID uint) (*models.User, error)
 	CreateUser(email string, password string) (*models.User, error)
 }
 
@@ -57,6 +58,16 @@ func (u userRepos) CreateUser(email string, password string) (*models.User, erro
 		user.Email, user.Password).Scan(&user.Id)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create the user: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (u userRepos) Get(userID uint) (*models.User, error) {
+	var user models.User
+	err := u.db.QueryRow(`SELECT id, email FROM users WHERE id = $1`, userID).Scan(&user.Id, &user.Email)
+	if err != nil {
+		return nil, fmt.Errorf(`something went wrong retrieving the user: %w`, err)
 	}
 
 	return &user, nil
