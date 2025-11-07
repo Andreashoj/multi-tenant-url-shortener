@@ -38,13 +38,18 @@ func main() {
 	// Repos
 	userRepo := repos.NewUserRepository(DB)
 	refreshTokenRepo := repos.NewRefreshTokenRepo(DB)
+	tenantRepo := repos.NewTenantRepo(DB)
 
 	// Services
 	authService := services.NewAuthService(userRepo, refreshTokenRepo, jwt)
 	userService := services.NewUserService(userRepo)
+	tenantService := services.NewTenantService(tenantRepo, userService)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService, userService, jwt)
+	tenantHandler := handlers.NewTenantHandler(authService, tenantService, jwt)
+
+	tenantHandler.RegisterRoutes(r)
 	authHandler.RegisterRoutes(r)
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), r)

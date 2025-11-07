@@ -16,25 +16,12 @@
             }),
         })
 
-        console.log(response.ok)
         if (response.ok) {
-            const data = await response.json()
-            // Handle success (redirect, etc.)
-            // eslint-disable-next-line svelte/no-navigation-without-resolve
-            goto("/dashboard")
+            await goto("/dashboard")
         } else {
             // Handle error
             console.error('Login failed')
         }
-    }
-
-    async function authorizedRequest() {
-        const response = await fetch('/api/auth/test', {
-            method: 'GET',
-            credentials: 'include'
-        })
-
-        console.log(await response.json())
     }
 </script>
 
@@ -52,7 +39,5 @@
         <button class="px-4 py-2.5 border border-black mt-4" onclick={submit}>
             Login
         </button>
-
-        <button onclick={authorizedRequest}>Make request!</button>
     </section>
 </main>

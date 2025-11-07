@@ -3,8 +3,6 @@ export async function handle({ event, resolve }) {
 	const API_URL = "http://host.docker.internal:8080"
 	const cookies = event.request.headers.get('cookie');
 
-	console.log(cookies)
-
 	try {
 		const res = await fetch(`${API_URL}/api/auth/me`, {
 			method: 'GET',
@@ -13,11 +11,9 @@ export async function handle({ event, resolve }) {
 			}
 		})
 
-		console.log("here..", res)
-
 		if (res.ok) {
 			const user = await res.json()
-			console.log('Response status:', user);
+			console.log(user)
 			event.locals.user = user
 		} else {
 
@@ -31,7 +27,7 @@ export async function handle({ event, resolve }) {
 			}
 		}
 	} catch(e) {
-		console.error('Auth check failed:', e)
+		console.error('Auth check failed')
 	}
 
 	return await resolve(event);

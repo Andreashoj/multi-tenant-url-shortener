@@ -25,7 +25,7 @@ func NewUserRepository(db *sql.DB) UserRepo {
 
 func (u userRepos) GetUserByEmailAndPassword(email string, password string) (*models.User, error) {
 	var user models.User
-	err := u.db.QueryRow(`SELECT id, email, password FROM users WHERE email = $1`, email).Scan(&user.Id, &user.Email, &user.Password)
+	err := u.db.QueryRow(`SELECT id, email, password FROM users WHERE email = $1`, email).Scan(&user.ID, &user.Email, &user.Password)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -55,7 +55,7 @@ func (u userRepos) CreateUser(email string, password string) (*models.User, erro
 
 	err = u.db.QueryRow(
 		`INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id`,
-		user.Email, user.Password).Scan(&user.Id)
+		user.Email, user.Password).Scan(&user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create the user: %w", err)
 	}
@@ -65,7 +65,7 @@ func (u userRepos) CreateUser(email string, password string) (*models.User, erro
 
 func (u userRepos) Get(userID uint) (*models.User, error) {
 	var user models.User
-	err := u.db.QueryRow(`SELECT id, email FROM users WHERE id = $1`, userID).Scan(&user.Id, &user.Email)
+	err := u.db.QueryRow(`SELECT id, email, role FROM users WHERE id = $1`, userID).Scan(&user.ID, &user.Email, &user.Role)
 	if err != nil {
 		return nil, fmt.Errorf(`something went wrong retrieving the user: %w`, err)
 	}

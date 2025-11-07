@@ -2,12 +2,13 @@ import type { RequestHandler } from '@sveltejs/kit';
 
 const API_URL = "http://host.docker.internal:8080";
 
+/* PROXY */
+/* Handle all client requests through client server, easier handle cross-origin cookies */
 async function proxyRequest(event: any, method: string) {
 	const { path } = event.params;
 	const cookies = event.request.headers.get('cookie');
-
-	// Build the URL to your Go backend
 	const url = `${API_URL}/api/${path}`;
+	// Create new request and attach cookies
 	const options: RequestInit = {
 		method,
 		headers: {
@@ -16,21 +17,23 @@ async function proxyRequest(event: any, method: string) {
 		}
 	};
 
-	// Include body for POST/PUT/PATCH requests
-	if (method !== 'GET' && method !== 'HEAD') {
+	// Attach body to request for anything but GET
+	if (method !== 'GET') {
 		options.body = await event.request.text();
 	}
 
 	try {
+		// Make request with proxy URL
 		const response = await fetch(url, options);
 		const data = await response.text();
 
+		// Create headers and cookies for client, based off response
 		const headers = new Headers();
 		headers.set('content-type', response.headers.get('content-type') || 'application/json');
-
 		const setCookie = response.headers.get('set-cookie');
 		if (setCookie) headers.set('set-cookie', setCookie);
 
+		// Return response with headers and cookies attached
 		return new Response(data, {
 			status: response.status,
 			headers

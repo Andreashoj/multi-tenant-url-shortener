@@ -1,6 +1,7 @@
 package db
 
 import (
+	"api/internal/models"
 	"database/sql"
 	"fmt"
 	"os"
@@ -47,11 +48,17 @@ func InitDB() (*sql.DB, error) {
 
 func runMigrations() error {
 	queries := []string{
+		`CREATE TABLE IF NOT EXISTS tenants (
+    		id SERIAL PRIMARY KEY,
+			name VARCHAR(255) UNIQUE NOT NULL
+		 )`,
 		`CREATE TABLE IF NOT EXISTS users (
     		id SERIAL PRIMARY KEY,
 			email VARCHAR(255) UNIQUE NOT NULL,
+    		role VARCHAR(255) NOT NULL,
 			password VARCHAR(255) UNIQUE NOT NULL,
-    		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			tenant_id INT REFERENCES tenants(id) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE IF NOT EXISTS refresh_tokens (
     		id UUID PRIMARY KEY,
@@ -76,9 +83,9 @@ func seed() error {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("tester12"), bcrypt.DefaultCost)
 
 	_, err := DB.Exec(
-		`INSERT INTO  users (email, password) VALUES ($1, $2)
+		`INSERT INTO  users (email, password, role ) VALUES ($1, $2, $3)
 				ON CONFLICT (email) DO NOTHING`,
-		"andrewhoj@gmail.com", string(hashedPassword),
+		"andrewhoj@gmail.com", string(hashedPassword), models.RoleAdmin,
 	)
 
 	if err != nil {

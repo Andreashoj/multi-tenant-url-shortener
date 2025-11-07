@@ -29,17 +29,14 @@ func (h *AuthHandler) RegisterRoutes(r *chi.Mux) {
 		auth.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
 		auth.Post("/api/auth/logout", h.logout)
 		auth.Get("/api/auth/me", h.me)
-		auth.Get("/api/auth/test", func(writer http.ResponseWriter, request *http.Request) {
-			respondJSON(writer, "Succes!", 200)
-		})
 	})
 
 	r.Post("/api/auth/login", h.login)
 }
 
 func (h *AuthHandler) me(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("user_id").(uint)
-	user, err := h.userService.Me(userId)
+	userID := r.Context().Value("user_id").(uint)
+	user, err := h.userService.Me(userID)
 	if err != nil {
 		respondError(w, "Something went wrong getting the user", 500)
 		return
@@ -61,13 +58,13 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshToken, err := h.authService.GenerateRefreshToken(user.Id, user.Email)
+	refreshToken, err := h.authService.GenerateRefreshToken(user.ID, user.Email)
 	if err != nil {
 		respondError(w, "Authentication failed", 500)
 		return
 	}
 
-	accessToken, err := h.authService.GenerateAccessToken(user.Id, user.Email)
+	accessToken, err := h.authService.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		respondError(w, "Authentication failed", 500)
 		return
@@ -93,7 +90,12 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	respondJSON(w, user, 200)
+	userResponse := models.UserResponse{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+	}
+	respondJSON(w, userResponse, 200)
 }
 
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {

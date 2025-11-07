@@ -3,8 +3,6 @@ package middleware
 import (
 	"api/internal/services"
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -25,12 +23,10 @@ func AuthMiddleware(jwtSecret string, authService services.AuthService) func(htt
 				var refreshToken *jwt.Token
 				refreshCookie, err = r.Cookie("refresh_token")
 				if err != nil {
-					log.Println("Refresh token missing:", err)
 					http.Error(w, "Unauthorized", http.StatusUnauthorized)
 					return
 				}
 
-				fmt.Println("Attempting refresh with token:", refreshCookie.Value[:20]+"...")
 				refreshToken, err = jwt.Parse(refreshCookie.Value, func(token *jwt.Token) (interface{}, error) {
 					return []byte(jwtSecret), nil
 				})

@@ -18,10 +18,8 @@ services:
     ports:
       - "8080:8080"
       - "2345:2345"
-    environment:
-      DATABASE_URL: postgres://user:postgres@postgres:5432/url-shortener?sslmode=disable
-      PORT: 8080
-      JWT_TOKEN: "HELLO"
+    env_file:
+      - .env
     volumes:
       - ./api:/app
     depends_on:

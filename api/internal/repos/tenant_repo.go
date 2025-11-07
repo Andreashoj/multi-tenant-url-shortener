@@ -1,0 +1,47 @@
+package repos
+
+import (
+	"api/internal/models"
+	"database/sql"
+	"fmt"
+)
+
+type TenantRepo interface {
+	Create(name string) (*models.Tenant, error)
+	Get(id uint) (*models.Tenant, error)
+	Delete(id uint) error
+	Update(id uint, name string) (*models.Tenant, error)
+}
+
+type tenantRepo struct {
+	db *sql.DB
+}
+
+func NewTenantRepo(db *sql.DB) TenantRepo {
+	return &tenantRepo{db: db}
+}
+
+func (t tenantRepo) Create(name string) (*models.Tenant, error) {
+	var tenant models.Tenant
+	err := t.db.QueryRow(`INSERT INTO tenants (name) VALUES ($1) RETURNING id, name`, name).Scan(&tenant.Id, &tenant.Name)
+	if err != nil {
+		return nil, fmt.Errorf("inserting the teanant went wrong: %w", err)
+	}
+
+	return &tenant, nil
+}
+
+func (t tenantRepo) Get(id uint) (*models.Tenant, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t tenantRepo) Delete(id uint) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t tenantRepo) Update(id uint, name string) (*models.Tenant, error) {
+	//TODO implement me
+	panic("implement me")
+}
