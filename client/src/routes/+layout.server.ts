@@ -1,5 +1,5 @@
 export const load = ({ locals }) => {
 	return {
-		user: locals.user
+		user: locals.user ?? null
 	}
 }

@@ -28,15 +28,34 @@ func (h TenantHandler) RegisterRoutes(r *chi.Mux) {
 	r.Route("/api/tenant", func(api chi.Router) {
 		api.Group(func(tenant chi.Router) {
 			tenant.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
+			tenant.Get("/", h.get)
 			tenant.Post("/", h.create)
 		})
 	})
 }
 
+func (h TenantHandler) get(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(uint)
+	if !ok {
+		log.Printf("ERROR: failed to retreive user_id")
+		respondError(w, "Internal server error", 500)
+		return
+	}
+
+	tenants, err := h.tenantService.GetAll(userID)
+	if err != nil {
+		log.Printf("ERROR: failed to retreive list of tenants")
+		respondError(w, "Failed to retrieve tenants", 500)
+		return
+	}
+
+	respondJSON(w, tenants, 200)
+}
+
 func (h TenantHandler) create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(uint)
 	if !ok {
-		log.Printf("ERROR: failed to retrieve user_id")
+		log.Printf("ERROR: failed to retreive user_id")
 		respondError(w, "Internal server error", 500)
 		return
 	}

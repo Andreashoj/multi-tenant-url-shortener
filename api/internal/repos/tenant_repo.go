@@ -9,6 +9,7 @@ import (
 type TenantRepo interface {
 	Create(name string) (*models.Tenant, error)
 	Get(id uint) (*models.Tenant, error)
+	GetAll() ([]*models.Tenant, error)
 	Delete(id uint) error
 	Update(id uint, name string) (*models.Tenant, error)
 }
@@ -29,6 +30,30 @@ func (t tenantRepo) Create(name string) (*models.Tenant, error) {
 	}
 
 	return &tenant, nil
+}
+
+func (t tenantRepo) GetAll() ([]*models.Tenant, error) {
+	rows, err := t.db.Query(`SELECT id, name FROM tenants`)
+	if err != nil {
+		return nil, fmt.Errorf("failed retrieving tenants: %w", err)
+	}
+	defer rows.Close()
+
+	var tenants []*models.Tenant
+	for rows.Next() {
+		var tenant models.Tenant
+		err = rows.Scan(&tenant.Id, &tenant.Name)
+		if err != nil {
+			return nil, fmt.Errorf("failed mapping tenant row: %w", err)
+		}
+		tenants = append(tenants, &tenant)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed iteraing through the rows: %w", err)
+	}
+
+	return tenants, nil
 }
 
 func (t tenantRepo) Get(id uint) (*models.Tenant, error) {

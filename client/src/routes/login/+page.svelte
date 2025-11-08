@@ -1,43 +1,45 @@
 <script lang="ts">
     import {goto} from "$app/navigation";
+    import {login} from "../../api/auth";
+    import {Button} from "$lib/components/ui/button";
+    import {Label} from "$lib/components/ui/label";
+    import {Input} from "$lib/components/ui/input";
+    import * as Card from "$lib/components/ui/card/index"
 
     let email = $state('')
     let password = $state('')
 
     async function submit() {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email,
-                password
-            }),
-        })
-
-        if (response.ok) {
+        try {
+            await login(email, password)
             await goto("/dashboard")
-        } else {
-            // Handle error
-            console.error('Login failed')
+        } catch (e) {
+            console.error(`Login failed: ${e}`)
         }
     }
 </script>
 
-<main class="w-full h-screen flex justify-center items-center flex-col">
-    <section>
+<Card.Root class="w-full max-w-sm">
+    <Card.Header>
+        <Card.Title>Login to your account</Card.Title>
+        <Card.Description
+        >Enter your email below to login to your account</Card.Description
+        >
+    </Card.Header>
+    <Card.Content>
         <div class="flex flex-col">
-            <label for="name">Email</label>
-            <input name="email" bind:value={email} type="text">
+            <Label class="mb-2" for="name">Email</Label>
+            <Input name="email" bind:value={email} type="text" />
         </div>
         <div class="flex flex-col mt-4">
-            <label for="password">Password</label>
-            <input name="password" bind:value={password} type="password">
+            <Label class="mb-2" for="password">Password</Label>
+            <Input name="password" bind:value={password} type="password" />
         </div>
 
-        <button class="px-4 py-2.5 border border-black mt-4" onclick={submit}>
-            Login
-        </button>
-    </section>
-</main>
+        <Card.Action>
+            <Button class="px-4 py-2.5 border border-black mt-4" onclick={submit}>
+                Login
+            </Button>
+        </Card.Action>
+    </Card.Content>
+</Card.Root>

@@ -10,6 +10,7 @@ import (
 type TenantService interface {
 	Create(userID uint, name string) (*models.Tenant, error)
 	Get(userID uint, tenantID uint) (*models.Tenant, error)
+	GetAll(userID uint) ([]*models.Tenant, error)
 	Update(userID uint, tenantID uint, name string) (*models.Tenant, error)
 	Delete(userID uint, tenantID uint) error
 }
@@ -24,6 +25,24 @@ func NewTenantService(tenantRepo repos.TenantRepo, userService UserService) Tena
 		tenantRepo:  tenantRepo,
 		userService: userService,
 	}
+}
+
+func (t tenantService) GetAll(userID uint) ([]*models.Tenant, error) {
+	user, err := t.userService.Me(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed retrieving the user: %w", err)
+	}
+
+	if user.Role != models.RoleAdmin {
+		return nil, errors.New("the users role doesn't have permission to create tenant")
+	}
+
+	tenants, err := t.tenantRepo.GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve tenants: %w", err)
+	}
+
+	return tenants, nil
 }
 
 func (t tenantService) Create(userID uint, name string) (*models.Tenant, error) {
