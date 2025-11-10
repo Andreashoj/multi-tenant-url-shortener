@@ -26,7 +26,7 @@ func main() {
 	// DB
 	DB, err := db.InitDB()
 	if err != nil {
-		println("Something went wrong connecting to the database")
+		log.Fatal("Something went wrong connecting to the database")
 		return
 	}
 

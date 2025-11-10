@@ -30,6 +30,7 @@ func (h TenantHandler) RegisterRoutes(r *chi.Mux) {
 			tenant.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
 			tenant.Get("/", h.get)
 			tenant.Post("/", h.create)
+			tenant.Delete("/:id", h.create)
 		})
 	})
 }
@@ -67,7 +68,7 @@ func (h TenantHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tenant, err := h.tenantService.Create(uint(userID), req.Name)
+	tenant, err := h.tenantService.Create(userID, req.Name, req.Type)
 	if err != nil {
 		log.Printf("ERROR: failed to create tenant: %v", err)
 		respondError(w, "Failed to create tenant", 500)
@@ -75,4 +76,13 @@ func (h TenantHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, tenant, 201)
+}
+
+func (h *TenantHandler) delete(w http.ResponseWriter, r *http.Request) {
+	tenantId := chi.URLParam(r, "id")
+	if tenantId == "" {
+		respondError(w, "Invalid request", 500)
+		return
+	}
+
 }

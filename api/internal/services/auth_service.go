@@ -24,7 +24,7 @@ type authService struct {
 }
 
 func NewAuthService(userRepo repos.UserRepo, refreshTokenRepo repos.RefreshTokenRepo, jwtSecret string) AuthService {
-	return authService{
+	return &authService{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
 		jwtSecret:        jwtSecret,
@@ -52,7 +52,6 @@ func (s authService) GenerateRefreshToken(userID uint, email string) (*models.Re
 	tokenID := uuid.NewString()
 	expiresAt := time.Now().Add(7 * 24 * time.Hour) // 7 days
 
-	// Generate JWT refresh token
 	claims := jwt.MapClaims{
 		"user_id":  userID,
 		"email":    email,

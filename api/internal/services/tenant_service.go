@@ -8,7 +8,7 @@ import (
 )
 
 type TenantService interface {
-	Create(userID uint, name string) (*models.Tenant, error)
+	Create(userID uint, name string, tp string) (*models.Tenant, error)
 	Get(userID uint, tenantID uint) (*models.Tenant, error)
 	GetAll(userID uint) ([]*models.Tenant, error)
 	Update(userID uint, tenantID uint, name string) (*models.Tenant, error)
@@ -45,7 +45,7 @@ func (t tenantService) GetAll(userID uint) ([]*models.Tenant, error) {
 	return tenants, nil
 }
 
-func (t tenantService) Create(userID uint, name string) (*models.Tenant, error) {
+func (t tenantService) Create(userID uint, name string, tp string) (*models.Tenant, error) {
 	user, err := t.userService.Me(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed retrieving the user: %w", err)
@@ -55,7 +55,7 @@ func (t tenantService) Create(userID uint, name string) (*models.Tenant, error) 
 		return nil, errors.New("the users role doesn't have permission to create tenant")
 	}
 
-	tenant, err := t.tenantRepo.Create(name) // TODO: Store the user who created the tenant ?
+	tenant, err := t.tenantRepo.Create(name, tp) // TODO: Store the user who created the tenant ?
 	if err != nil {
 		return nil, fmt.Errorf("failed creating the tenant: %w", err)
 	}

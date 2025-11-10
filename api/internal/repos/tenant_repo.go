@@ -7,7 +7,7 @@ import (
 )
 
 type TenantRepo interface {
-	Create(name string) (*models.Tenant, error)
+	Create(name string, tp string) (*models.Tenant, error)
 	Get(id uint) (*models.Tenant, error)
 	GetAll() ([]*models.Tenant, error)
 	Delete(id uint) error
@@ -22,14 +22,18 @@ func NewTenantRepo(db *sql.DB) TenantRepo {
 	return &tenantRepo{db: db}
 }
 
-func (t tenantRepo) Create(name string) (*models.Tenant, error) {
-	var tenant models.Tenant
-	err := t.db.QueryRow(`INSERT INTO tenants (name) VALUES ($1) RETURNING id, name`, name).Scan(&tenant.Id, &tenant.Name)
+func (t tenantRepo) Create(name string, tp string) (*models.Tenant, error) {
+	tenant, err := models.NewTenant(name, tp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tenant: %w", err)
+	}
+
+	err = t.db.QueryRow(`INSERT INTO tenants (name, type) VALUES ($1, $2) RETURNING id`, name, tp).Scan(&tenant.Id)
 	if err != nil {
 		return nil, fmt.Errorf("inserting the teanant went wrong: %w", err)
 	}
 
-	return &tenant, nil
+	return tenant, nil
 }
 
 func (t tenantRepo) GetAll() ([]*models.Tenant, error) {
