@@ -13,7 +13,6 @@ export async function handle({ event, resolve }) {
 
 		if (res.ok) {
 			const user = await res.json()
-			console.log(user)
 			event.locals.user = user
 		} else {
 

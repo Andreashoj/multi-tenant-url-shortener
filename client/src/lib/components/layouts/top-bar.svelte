@@ -20,7 +20,7 @@
         { title }
     </h1>
 
-    <Button class="cursor-pointer" variant="secondary" onclick={handleLogout}>
-        Logout
+    <Button class="cursor-pointer bg-gray-200 text-black" onclick={handleLogout}>
+        Logout (should be moved to profile icon)
     </Button>
 </header>

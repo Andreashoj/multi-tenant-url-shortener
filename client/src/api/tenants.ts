@@ -2,6 +2,7 @@ import type { Tenant } from '../models/tenant';
 
 export interface CreateTenantRequest {
 	name: string
+	type: string
 }
 export async function createTenant(payload: CreateTenantRequest): Promise<Tenant> {
 	const res = await fetch("/api/tenant", {
@@ -31,4 +32,15 @@ export async function getTenants(): Promise<Tenant[]> {
 	}
 
 	return res.json()
+}
+
+export async function deleteTenant(id: number): Promise<void> {
+	const res = await fetch(`/api/tenant/${id}`, {
+		method: "DELETE",
+		credentials: "include"
+	})
+
+	if (!res.ok) {
+		throw new Error(`Something went wrong trying to delete tenant: ${id}`)
+	}
 }

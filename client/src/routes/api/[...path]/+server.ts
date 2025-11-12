@@ -18,14 +18,14 @@ async function proxyRequest(event: any, method: string) {
 	};
 
 	// Attach body to request for anything but GET
-	if (method !== 'GET') {
+	if (method !== 'GET' && method !== 'DELETE') {
 		options.body = await event.request.text();
 	}
 
 	try {
 		// Make request with proxy URL
 		const response = await fetch(url, options);
-		const data = await response.text();
+		const data = response.status == 204 ? null : await response.text();
 
 		// Create headers and cookies for client, based off response
 		const headers = new Headers();

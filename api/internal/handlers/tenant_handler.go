@@ -3,9 +3,12 @@ package handlers
 import (
 	"api/internal/middleware"
 	"api/internal/models"
+	"api/internal/repos"
 	"api/internal/services"
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -24,18 +27,18 @@ func NewTenantHandler(authService services.AuthService, tenantService services.T
 	}
 }
 
-func (h TenantHandler) RegisterRoutes(r *chi.Mux) {
+func (h *TenantHandler) RegisterRoutes(r *chi.Mux) {
 	r.Route("/api/tenant", func(api chi.Router) {
 		api.Group(func(tenant chi.Router) {
 			tenant.Use(middleware.AuthMiddleware(h.jwtSecret, h.authService))
 			tenant.Get("/", h.get)
 			tenant.Post("/", h.create)
-			tenant.Delete("/:id", h.create)
+			tenant.Delete("/{id}", h.delete)
 		})
 	})
 }
 
-func (h TenantHandler) get(w http.ResponseWriter, r *http.Request) {
+func (h *TenantHandler) get(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(uint)
 	if !ok {
 		log.Printf("ERROR: failed to retreive user_id")
@@ -53,7 +56,7 @@ func (h TenantHandler) get(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, tenants, 200)
 }
 
-func (h TenantHandler) create(w http.ResponseWriter, r *http.Request) {
+func (h *TenantHandler) create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(uint)
 	if !ok {
 		log.Printf("ERROR: failed to retreive user_id")
@@ -79,10 +82,33 @@ func (h TenantHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TenantHandler) delete(w http.ResponseWriter, r *http.Request) {
-	tenantId := chi.URLParam(r, "id")
-	if tenantId == "" {
+	tenantParam := chi.URLParam(r, "id")
+	if tenantParam == "" {
 		respondError(w, "Invalid request", 500)
 		return
 	}
 
+	tenantID, err := strconv.Atoi(tenantParam)
+	if err != nil {
+		respondError(w, "Invalid request", 500)
+		return
+	}
+
+	userID, ok := r.Context().Value("user_id").(uint)
+	if !ok {
+		respondError(w, "Internal server error", 500)
+		return
+	}
+
+	err = h.tenantService.Delete(userID, uint(tenantID))
+	if errors.Is(err, repos.ErrNoTenantFound) {
+		respondError(w, "No such tenant exists", 404)
+	}
+
+	if err != nil {
+		respondError(w, "Internal server error", 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

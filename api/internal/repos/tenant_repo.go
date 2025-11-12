@@ -3,6 +3,7 @@ package repos
 import (
 	"api/internal/models"
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -21,6 +22,8 @@ type tenantRepo struct {
 func NewTenantRepo(db *sql.DB) TenantRepo {
 	return &tenantRepo{db: db}
 }
+
+var ErrNoTenantFound = errors.New("no tenant found")
 
 func (t tenantRepo) Create(name string, tp string) (*models.Tenant, error) {
 	tenant, err := models.NewTenant(name, tp)
@@ -66,8 +69,21 @@ func (t tenantRepo) Get(id uint) (*models.Tenant, error) {
 }
 
 func (t tenantRepo) Delete(id uint) error {
-	//TODO implement me
-	panic("implement me")
+	result, err := t.db.Exec(`DELETE FROM tenants WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("failed deleting tenant: %d, with error: %w", id, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed getting rows effected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return ErrNoTenantFound
+	}
+
+	return nil
 }
 
 func (t tenantRepo) Update(id uint, name string) (*models.Tenant, error) {

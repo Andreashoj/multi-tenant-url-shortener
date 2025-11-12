@@ -74,6 +74,18 @@ func (t tenantService) Update(userID uint, tenantID uint, name string) (*models.
 }
 
 func (t tenantService) Delete(userID uint, tenantID uint) error {
-	//TODO implement me
-	panic("implement me")
+	user, err := t.userService.Me(userID)
+	if err != nil {
+		return fmt.Errorf("failed retrieving user: %w", err)
+	}
+
+	if user.Role != models.RoleAdmin {
+		return fmt.Errorf("user doesn't have permission to delete tenant")
+	}
+
+	if err = t.tenantRepo.Delete(tenantID); err != nil {
+		return fmt.Errorf("failed deleting tenant: %w", err)
+	}
+
+	return nil
 }

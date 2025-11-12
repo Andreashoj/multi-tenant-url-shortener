@@ -5,7 +5,8 @@
         return page.url.pathname === path;
     }
 </script>
-<nav class="bg-emerald-950 w-20 pt-4 pb-8 flex flex-col items-center">
+<div class="w-20 h-screen"></div>
+<nav class="bg-emerald-950 w-20 pt-4 pb-8 flex flex-col items-center fixed h-screen">
     <span class="text-white">Logo</span>
 
     <div class="flex flex-col gap-2 items-center mt-12">

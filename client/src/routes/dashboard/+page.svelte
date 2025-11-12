@@ -1,6 +1,7 @@
 <script lang="ts">
     import CreateTenantDialog from "$lib/components/dialogs/create-tenant-dialog.svelte";
     import * as Card from "$lib/components/ui/card/index.js";
+	import ListItem from "$lib/components/ui/list-item.svelte";
     import {tenantStore} from "../../stores/tenantStore";
 
     let { data } = $props()
@@ -29,9 +30,11 @@
     <Card.Content>
         <div class="flex flex-col">
             {#each tenants as tenant (tenant.id)}
-                <div class="w-full">
-                    {tenant.name}
-                </div>
+                <ListItem
+                        name={tenant.name}
+                        technologies={["Docker", "Svelte", "Go"]}
+                        onDelete={() => tenantStore.remove(tenant.id)}
+                />
             {/each}
         </div>
     </Card.Content>
