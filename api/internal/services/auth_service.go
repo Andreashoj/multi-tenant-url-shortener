@@ -73,7 +73,7 @@ func (s authService) GenerateRefreshToken(userID uint, email string) (*models.Re
 		CreatedAt: time.Now(),
 	}
 
-	if err := s.refreshTokenRepo.CreateRefreshToken(refreshToken); err != nil {
+	if err = s.refreshTokenRepo.CreateRefreshToken(refreshToken); err != nil {
 		return nil, fmt.Errorf(`something went wrong generating the refresh token: %s`, err)
 	}
 
